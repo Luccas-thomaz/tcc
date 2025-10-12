@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz de Matemática</title>
+
+<!-- Ícone e Manifest -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff9a9e">
+<link rel="icon" href="icon-192.png">
+
+<!-- Fonte -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: 'Fredoka One', cursive;
+  margin: 0; padding: 0;
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+}
+#container {
+  background: #fff; max-width: 550px; width: 90%; padding: 25px;
+  border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  text-align: center;
+}
+h1 { font-size: 36px; margin-bottom: 20px; color: #333; }
+.question { font-size: 24px; margin-bottom: 20px; }
+.btn {
+  display: block; background: #ff9a9e; border: none; padding: 12px;
+  margin: 10px auto; border-radius: 12px; cursor: pointer; font-size: 18px;
+  width: 70%; transition: 0.3s;
+}
+.btn:hover { transform: scale(1.05); background: #ff6f91; color: #fff; }
+.option {
+  display: block; background: #fdd835; border: none; padding: 12px;
+  margin: 10px 0; border-radius: 12px; cursor: pointer; font-size: 20px;
+  transition: 0.3s;
+}
+.option:hover { transform: scale(1.05); background: #fbc02d; }
+.hidden { display: none; }
+#timer { font-size: 20px; margin: 10px; color: #d32f2f; font-weight: bold; }
+#ranking-list { text-align: left; padding: 0 20px; }
+input, select { font-size: 16px; padding: 6px; margin: 6px; border-radius: 8px; }
+label { display: block; margin: 4px; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<div id="container">
+
+  <!-- Sons offline -->
+  <audio id="sound-correct" src="correct.mp3"></audio>
+  <audio id="sound-wrong" src="wrong.mp3"></audio>
+
+  <!-- Tela inicial -->
+  <div id="menu">
+    <label for="difficulty">Escolha a dificuldade:</label>
+    <select id="difficulty">
+      <option value="easy">Fácil</option>
+      <option value="medium">Médio</option>
+      <option value="hard">Difícil</option>
+    </select>
+    <button class="btn" onclick="startSelectedDifficulty()">Iniciar</button>
+    <button class="btn" onclick="showFreeMode()">Modo Livre</button>
+    <button class="btn" onclick="showHelp()">Ajuda</button>
+    <button class="btn" onclick="showRanking()">Ranking</button>
+  </div>
+
+  <!-- Tela de ajuda -->
+  <div id="help" class="hidden">
+    <h2>Como funciona?</h2>
+    <p>Responda perguntas de matemática dentro do tempo limite.</p>
+    <p><b>Fácil:</b> adição e subtração simples, 15s cada pergunta, 5 perguntas.</p>
+    <p><b>Médio:</b> adição, subtração e multiplicação simples, 10s cada, 10 perguntas.</p>
+    <p><b>Difícil:</b> adição, subtração, multiplicação e divisão simples, 7s cada, 15 perguntas.</p>
+    <p><b>Modo Livre:</b> escolha tempo, operações e número de perguntas.</p>
+    <button class="btn" onclick="goBack()">Voltar</button>
+  </div>
+
+  <!-- Tela de modo livre -->
+  <div id="free-mode" class="hidden">
+    <h2>Modo Livre</h2>
+    <label>Tempo por pergunta (segundos):</label>
+    <input type="number" id="timeInput" value="10" min="0"><br>
+    <label>Operações:</label>
+    <label><input type="checkbox" class="op-check" value="add" checked> Adição</label>
+    <label><input type="checkbox" class="op-check" value="sub" checked> Subtração</label>
+    <label><input type="checkbox" class="op-check" value="mul" checked> Multiplicação</label>
+    <label><input type="checkbox" class="op-check" value="div" checked> Divisão</label><br>
+    <label>Número de perguntas:</label>
+    <input type="number" id="numQuestionsInput" value="5" min="1"><br>
+    <button class="btn" onclick="startFreeMode()">Iniciar</button>
+    <button class="btn" onclick="goBack()">Voltar</button>
+  </div>
+
+  <!-- Tela do quiz -->
+  <div id="quiz" class="hidden">
+    <p id="timer"></p>
+    <p class="question" id="question"></p>
+    <div id="options"></div>
+  </div>
+
+  <!-- Tela final -->
+  <div id="end" class="hidden">
+    <h2>Fim do Quiz!</h2>
+    <p id="final-score"></p>
+    <input type="text" id="playerName" placeholder="Digite seu nome">
+    <button class="btn" onclick="saveScore()">Salvar no Ranking</button>
+    <button class="btn" onclick="restart()">Voltar ao Menu</button>
+  </div>
+
+  <!-- Tela de ranking -->
+  <div id="ranking" class="hidden">
+    <h2>Ranking dos Jogadores</h2>
+    <ol id="ranking-list"></ol>
+    <button class="btn" onclick="clearRanking()">Limpar Ranking</button>
+    <button class="btn" onclick="goBack()">Voltar</button>
+  </div>
+
+</div>
+
+<script>
+let score = 0, currentQuestion = 0, totalQuestions = 5, timePerQuestion = 10, timer;
+let selectedOperations = [], questions = [];
+
+// ---------- Navegação ----------
+function goBack() { document.querySelectorAll("#help, #free-mode, #ranking").forEach(el => el.classList.add("hidden")); document.getElementById("menu").classList.remove("hidden"); }
+function showHelp() { document.getElementById("menu").classList.add("hidden"); document.getElementById("help").classList.remove("hidden"); }
+function showFreeMode() { document.getElementById("menu").classList.add("hidden"); document.getElementById("free-mode").classList.remove("hidden"); }
+function showRanking() { document.getElementById("menu").classList.add("hidden"); document.getElementById("ranking").classList.remove("hidden"); loadRanking(); }
+
+// ---------- Dificuldades ----------
+function startSelectedDifficulty() {
+  const difficulty = document.getElementById("difficulty").value;
+  if (difficulty==="easy"){timePerQuestion=15; totalQuestions=5; selectedOperations=["add","sub"];}
+  else if (difficulty==="medium"){timePerQuestion=10; totalQuestions=10; selectedOperations=["add","sub","mul"];}
+  else {timePerQuestion=7; totalQuestions=15; selectedOperations=["add","sub","mul","div"];}
+  startQuiz();
+}
+
+// ---------- Modo Livre ----------
+function startFreeMode() {
+  timePerQuestion=parseInt(document.getElementById("timeInput").value);
+  totalQuestions=parseInt(document.getElementById("numQuestionsInput").value);
+  selectedOperations=Array.from(document.querySelectorAll(".op-check:checked")).map(el=>el.value);
+  if(selectedOperations.length===0) selectedOperations=["add","sub","mul","div"];
+  startQuiz();
+}
+
+// ---------- Geração de Perguntas ----------
+function generateQuestion() {
+  let num1,num2,question,answer;
+  let op=selectedOperations[Math.floor(Math.random()*selectedOperations.length)];
+  switch(op){
+    case "add": num1=Math.floor(Math.random()*10)+1; num2=Math.floor(Math.random()*10)+1; question=`${num1} + ${num2}`; answer=num1+num2; break;
+    case "sub": num1=Math.floor(Math.random()*10)+1; num2=Math.floor(Math.random()*10)+1; if(num2>num1)[num1,num2]=[num2,num1]; question=`${num1} - ${num2}`; answer=num1-num2; break;
+    case "mul": num1=Math.floor(Math.random()*12)+1; num2=Math.floor(Math.random()*12)+1; question=`${num1} x ${num2}`; answer=num1*num2; break;
+    case "div": num2=Math.floor(Math.random()*12)+1; answer=Math.floor(Math.random()*12)+1; num1=num2*answer; question=`${num1} ÷ ${num2}`; break;
+  }
+  let options=new Set([answer]);
+  while(options.size<4){ let fake=answer+(Math.floor(Math.random()*7)-3); if(fake>0 && fake!==answer) options.add(fake); }
+  return {question, options:Array.from(options).sort(()=>Math.random()-0.5), answer};
+}
+
+// ---------- Lógica Principal ----------
+function startQuiz() {
+  score=0; currentQuestion=0; questions=[];
+  for(let i=0;i<totalQuestions;i++) questions.push(generateQuestion());
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("free-mode").classList.add("hidden");
+  document.getElementById("quiz").classList.remove("hidden");
+  loadQuestion();
+}
+
+function loadQuestion(){
+  if(currentQuestion<questions.length){
+    const q=questions[currentQuestion];
+    document.getElementById("question").innerText=q.question;
+    const optionsDiv=document.getElementById("options"); optionsDiv.innerHTML="";
+    q.options.forEach(option=>{
+      const button=document.createElement("button"); button.innerText=option; button.className="option";
+      button.onclick=()=>checkAnswer(option,button); optionsDiv.appendChild(button);
+    });
+    if(timePerQuestion>0){
+      let timeLeft=timePerQuestion; document.getElementById("timer").innerText="Tempo: "+timeLeft+"s";
+      clearInterval(timer);
+      timer=setInterval(()=>{
+        timeLeft--; document.getElementById("timer").innerText="Tempo: "+timeLeft+"s";
+        if(timeLeft<=0){ clearInterval(timer); showCorrectAnswer(); Array.from(document.getElementById("options").children).forEach(btn=>btn.disabled=true);
+          setTimeout(()=>{currentQuestion++; loadQuestion();},800);
+        }
+      },1000);
+    } else document.getElementById("timer").innerText="";
+  } else endQuiz();
+}
+
+function checkAnswer(selected,button){
+  const q=questions[currentQuestion];
+  const soundCorrect=document.getElementById("sound-correct");
+  const soundWrong=document.getElementById("sound-wrong");
+  if(selected==q.answer){ score++; button.style.backgroundColor="#32cd32"; soundCorrect.currentTime=0; soundCorrect.play(); }
+  else{ button.style.backgroundColor="#ff4c4c"; soundWrong.currentTime=0; soundWrong.play(); showCorrectAnswer(); }
+  Array.from(document.getElementById("options").children).forEach(btn=>btn.disabled=true);
+  clearInterval(timer);
+  setTimeout(()=>{currentQuestion++; loadQuestion();},800);
+}
+
+function showCorrectAnswer(){
+  const q=questions[currentQuestion];
+  Array.from(document.getElementById("options").children).forEach(btn=>{ if(parseInt(btn.innerText)===q.answer) btn.style.backgroundColor="#32cd32"; });
+}
+
+function endQuiz(){
+  document.getElementById("quiz").classList.add("hidden");
+  document.getElementById("end").classList.remove("hidden");
+  document.getElementById("final-score").innerText=`Você acertou ${score} de ${totalQuestions} perguntas!`;
+}
+
+function saveScore(){
+  const name=document.getElementById("playerName").value.trim();
+  if(!name){ alert("Digite seu nome!"); return; }
+  let ranking=JSON.parse(localStorage.getItem("ranking"))||[];
+  ranking.push({name,score});
+  ranking.sort((a,b)=>b.score-a.score);
+  ranking=ranking.slice(0,10);
+  localStorage.setItem("ranking",JSON.stringify(ranking));
+  restart();
+}
+
+function loadRanking(){
+  const list=document.getElementById("ranking-list");
+  list.innerHTML="";
+  let ranking=JSON.parse(localStorage.getItem("ranking"))||[];
+  ranking.forEach(player=>{ const li=document.createElement("li"); li.textContent=`${player.name} - ${player.score} pontos`; list.appendChild(li); });
+  if(ranking.length===0) list.innerHTML="<p>Ninguém jogou ainda.</p>";
+}
+
+function clearRanking(){ if(confirm("Tem certeza que deseja limpar todo o ranking?")){ localStorage.removeItem("ranking"); loadRanking(); alert("Ranking limpo com sucesso!"); } }
+function restart(){ document.getElementById("end").classList.add("hidden"); document.getElementById("menu").classList.remove("hidden"); }
+</script>
+
+<!-- Registro do Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("Service Worker registrado!"))
+    .catch(err => console.error("Erro ao registrar Service Worker:", err));
+}
+</script>
+
+</body>
+</html>

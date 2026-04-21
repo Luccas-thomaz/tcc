@@ -6,17 +6,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Tamanhos fixos
   const sizes = {
-    small: "10px",
-    normal: "16px",
-    large: "20px",
+    small: "14px",
+    normal: "19px",
+    large: "24px",
   };
 
-  // Função para aplicar fonte e salvar preferência
   function setFontSize(size) {
     root.style.fontSize = sizes[size];
     localStorage.setItem("fontSize", size);
 
-    // Atualiza o estado visual dos botões
     [btnSmall, btnNormal, btnLarge].forEach((btn) =>
       btn.classList.remove("active")
     );
@@ -25,12 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
     else btnLarge.classList.add("active");
   }
 
-  // Eventos dos botões
   btnSmall.addEventListener("click", () => setFontSize("small"));
   btnNormal.addEventListener("click", () => setFontSize("normal"));
   btnLarge.addEventListener("click", () => setFontSize("large"));
 
-  // Ao carregar, aplica o tamanho salvo ou o padrão
   const savedSize = localStorage.getItem("fontSize") || "normal";
   setFontSize(savedSize);
 });

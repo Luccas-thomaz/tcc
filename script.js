@@ -37,17 +37,17 @@ function showRanking() {
 function startSelectedDifficulty() {
   const difficulty = document.getElementById("difficulty").value;
   if (difficulty === "easy") {
-    timePerQuestion = 15;
+    timePerQuestion = 20;
     totalQuestions = 5;
-    selectedOperations = ["add", "sub"];
     currentDifficulty = "Fácil";
+    selectedOperations = ["add", "sub"];
   } else if (difficulty === "medium") {
-    timePerQuestion = 10;
+    timePerQuestion = 15;
     totalQuestions = 10;
     selectedOperations = ["add", "sub", "mul"];
     currentDifficulty = "Médio";
   } else {
-    timePerQuestion = 7;
+    timePerQuestion = 10;
     totalQuestions = 15;
     selectedOperations = ["add", "sub", "mul", "div"];
     currentDifficulty = "Difícil";
@@ -70,19 +70,28 @@ function startFreeMode() {
 
 // ---------- Geração de Perguntas ----------
 function generateQuestion() {
-  let num1, num2, question, answer;
+  console.log("Dificuldade:", currentDifficulty);
+  console.log("Operações:", selectedOperations);
+  let num1, num2, maxNum, question, answer;
   let op =
     selectedOperations[Math.floor(Math.random() * selectedOperations.length)];
+  if (currentDifficulty === "Fácil") {
+    maxNum = 10;
+  } else if (currentDifficulty === "Médio") {
+    maxNum = 50;
+  } else {
+    maxNum = 100;
+  }
   switch (op) {
     case "add":
-      num1 = Math.floor(Math.random() * 10) + 1;
-      num2 = Math.floor(Math.random() * 10) + 1;
+      num1 = Math.floor(Math.random() * maxNum) + 1;
+      num2 = Math.floor(Math.random() * maxNum) + 1;
       question = `${num1} + ${num2}`;
       answer = num1 + num2;
       break;
     case "sub":
-      num1 = Math.floor(Math.random() * 10) + 1;
-      num2 = Math.floor(Math.random() * 10) + 1;
+      num1 = Math.floor(Math.random() * maxNum) + 1;
+      num2 = Math.floor(Math.random() * maxNum) + 1;
       if (num2 > num1) [num1, num2] = [num2, num1];
       question = `${num1} - ${num2}`;
       answer = num1 - num2;

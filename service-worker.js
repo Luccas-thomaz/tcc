@@ -1,36 +1,42 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const btnSmall = document.getElementById("font-small");
-  const btnNormal = document.getElementById("font-normal");
-  const btnLarge = document.getElementById("font-large");
-  const root = document.documentElement;
+const CACHE_NAME = "quiz-cache-v1";
+const FILES_TO_CACHE = [
+  "index.html",
+  "manifest.json",
+  "correct.mp3",
+  "wrong.mp3",
+  "icon-192.png",
+  "icon-512.png",
+];
 
-  // Tamanhos fixos
-  const sizes = {
-    small: "10px",
-    normal: "16px",
-    large: "20px",
-  };
+// Instalação
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(FILES_TO_CACHE);
+    })
+  );
+});
 
-  // Função para aplicar fonte e salvar preferência
-  function setFontSize(size) {
-    root.style.fontSize = sizes[size];
-    localStorage.setItem("fontSize", size);
+// Ativação
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keyList) =>
+      Promise.all(
+        keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      )
+    )
+  );
+});
 
-    // Atualiza o estado visual dos botões
-    [btnSmall, btnNormal, btnLarge].forEach((btn) =>
-      btn.classList.remove("active")
-    );
-    if (size === "small") btnSmall.classList.add("active");
-    else if (size === "normal") btnNormal.classList.add("active");
-    else btnLarge.classList.add("active");
-  }
-
-  // Eventos dos botões
-  btnSmall.addEventListener("click", () => setFontSize("small"));
-  btnNormal.addEventListener("click", () => setFontSize("normal"));
-  btnLarge.addEventListener("click", () => setFontSize("large"));
-
-  // Ao carregar, aplica o tamanho salvo ou o padrão
-  const savedSize = localStorage.getItem("fontSize") || "normal";
-  setFontSize(savedSize);
+// Busca offline
+self.addEventListener("fetch", (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
 });

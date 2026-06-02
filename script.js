@@ -2,6 +2,9 @@ let score = 0,
   currentQuestion = 0,
   totalQuestions = 5,
   timePerQuestion = 10,
+  currentDifficulty = "",
+  startTime = 0,
+  averageTime = 0,
   timer;
 let selectedOperations = [],
   questions = [];
@@ -37,14 +40,17 @@ function startSelectedDifficulty() {
     timePerQuestion = 15;
     totalQuestions = 5;
     selectedOperations = ["add", "sub"];
+    currentDifficulty = "Fácil";
   } else if (difficulty === "medium") {
     timePerQuestion = 10;
     totalQuestions = 10;
     selectedOperations = ["add", "sub", "mul"];
+    currentDifficulty = "Médio";
   } else {
     timePerQuestion = 7;
     totalQuestions = 15;
     selectedOperations = ["add", "sub", "mul", "div"];
+    currentDifficulty = "Difícil";
   }
   startQuiz();
 }
@@ -58,6 +64,7 @@ function startFreeMode() {
   ).map((el) => el.value);
   if (selectedOperations.length === 0)
     selectedOperations = ["add", "sub", "mul", "div"];
+  currentDifficulty = "Livre";
   startQuiz();
 }
 
@@ -110,6 +117,7 @@ function startQuiz() {
   score = 0;
   currentQuestion = 0;
   questions = [];
+  startTime = Date.now();
   for (let i = 0; i < totalQuestions; i++) questions.push(generateQuestion());
   document.getElementById("menu").classList.add("hidden");
   document.getElementById("free-mode").classList.add("hidden");
@@ -187,6 +195,8 @@ function showCorrectAnswer() {
 }
 
 function endQuiz() {
+  const totalTime = (Date.now() - startTime) / 1000;
+  averageTime = totalTime / totalQuestions;
   document.getElementById("quiz").classList.add("hidden");
   document.getElementById("end").classList.remove("hidden");
   document.getElementById(
@@ -201,23 +211,67 @@ function saveScore() {
     return;
   }
   let ranking = JSON.parse(localStorage.getItem("ranking")) || [];
-  ranking.push({ name, score });
-  ranking.sort((a, b) => b.score - a.score);
+  ranking.push({
+    name,
+    score,
+    difficulty: currentDifficulty,
+    averageTime: averageTime,
+  });
+  ranking.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+
+    return a.averageTime - b.averageTime;
+  });
   ranking = ranking.slice(0, 10);
   localStorage.setItem("ranking", JSON.stringify(ranking));
   restart();
 }
 
 function loadRanking() {
-  const list = document.getElementById("ranking-list");
-  list.innerHTML = "";
-  let ranking = JSON.parse(localStorage.getItem("ranking")) || [];
-  ranking.forEach((player) => {
-    const li = document.createElement("li");
-    li.textContent = `${player.name} - ${player.score} pontos`;
-    list.appendChild(li);
-  });
-  if (ranking.length === 0) list.innerHTML = "<p>Ninguém jogou ainda.</p>";
+  {
+    const list = document.getElementById("ranking-list");
+    list.innerHTML = "";
+
+    let ranking = JSON.parse(localStorage.getItem("ranking")) || [];
+
+    if (ranking.length === 0) {
+      list.innerHTML = "<p>Ninguém jogou ainda.</p>";
+      return;
+    }
+
+    ranking.forEach((player, index) => {
+      const li = document.createElement("li");
+      li.classList.add("ranking-item");
+
+      let medalha = "";
+
+      if (index === 0) medalha = "🥇";
+      else if (index === 1) medalha = "🥈";
+      else if (index === 2) medalha = "🥉";
+      else medalha = `${index + 1}º`;
+
+      li.innerHTML = `
+      <span class="ranking-position">${medalha}</span>
+
+      <div class="ranking-info">
+       <div><strong>${player.name}</strong></div>
+  <div>
+    ${player.difficulty} • ${
+        player.averageTime ? player.averageTime.toFixed(1) : "--"
+      } segundos por questão
+  </div>
+      </div>
+
+      <div class="ranking-score">
+        ${player.score} pts
+      </div>
+    `;
+
+      list.appendChild(li);
+    });
+  }
 }
 
 function clearRanking() {

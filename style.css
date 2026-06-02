@@ -48,7 +48,28 @@ h1 {
   margin-bottom: 1.25rem; /* 20px */
   color: #333;
 }
+.game-title {
+  font-family: "Luckiest Guy", cursive;
+  font-size: 4rem;
+  text-align: center;
 
+  background: linear-gradient(
+    45deg,
+    red,
+    orange,
+    yellow,
+    green,
+    blue,
+    indigo,
+    violet
+  );
+
+  background-clip: text;
+  -webkit-background-clip: text;
+
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
 .question {
   font-size: 1.5rem; /* 24px */
   margin-bottom: 1.25rem; /* 20px */
@@ -106,8 +127,36 @@ h1 {
 }
 
 #ranking-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.ranking-item {
+  background: #fff8dc;
+  margin: 10px 0;
+  padding: 15px;
+  border-radius: 12px;
+  border: 2px solid #fdd835;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.ranking-position {
+  font-size: 1.5rem;
+  margin-right: 10px;
+}
+
+.ranking-info {
+  flex-grow: 1;
   text-align: left;
-  padding: 0 1.25rem; /* 20px */
+}
+
+.ranking-score {
+  font-weight: bold;
+  color: #ff6f00;
 }
 
 input,
